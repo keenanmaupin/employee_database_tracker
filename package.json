@@ -1,0 +1,17 @@
+{
+  "name": "employee_database_tracker",
+  "version": "1.0.0",
+  "description": ":TITLE:\r 👑Employee Database Tracker",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "inquirer": "^11.1.0",
+    "node": "^20.18.0",
+    "pg": "^8.13.0"
+  }
+}
