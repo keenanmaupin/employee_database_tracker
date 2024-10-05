@@ -5,5 +5,8 @@ ON department.id = role.department_id
 INNER JOIN employee
 ON role.id = employee.role_id
 
+-- *SELECT * FROM department 
 
-     
+-- *SELECT * FROM role
+
+-- *SELECT * FROM employee
