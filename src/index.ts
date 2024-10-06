@@ -1,65 +1,140 @@
-import express from 'express';
-import { connectDatabase } from './connection.js';  // Import the database connection
+import inquirer from 'inquirer';
+import { Pool } from 'pg';
 
-// Create an express application
-const app = express();
-const PORT = process.env.PORT || 3000;
+// Create a PostgreSQL connection pool
+const pool = new Pool({
+  user: 'your_username', // Replace with your actual database username
+  host: 'localhost',
+  database: 'companyX_db', // Make sure this database exists
+  password: 'your_password', // Replace with your actual database password
+  port: 5432,
+});
 
-// Middleware to parse JSON
-app.use(express.json());
+// Function to add a department
+async function addDepartment() {
+  const { name }: { name: string } = await inquirer.prompt([
+    {
+      name: 'name',
+      message: 'Enter the name of the department:',
+      type: 'input',
+    },
+  ]);
 
-// Sample data for departments
-const departments = [
-  { id: 1, name: 'Kitchen' },
-  { id: 2, name: 'Cashier' },
-  { id: 3, name: 'Janitor' }
-];
+  await pool.query('INSERT INTO department (name) VALUES ($1)', [name]);
+  console.log(`Department ${name} added successfully.`);
+}
 
-// Sample data for roles
-const roles = [
-  { id: 1, title: 'Chef', salary: 5000, department_id: 1 },
-  { id: 2, title: 'Main Cashier', salary: 10000, department_id: 2 },
-  { id: 3, title: 'Mast Custodian', salary: 50000, department_id: 3 }
-];
+// Function to add a role
+async function addRole() {
+  const departments = await pool.query('SELECT id, name FROM department');
+  const departmentChoices = departments.rows.map(dept => ({
+    name: dept.name,
+    value: dept.id,
+  }));
 
-// Sample data for employees
-const employees = [
-  { id: 1, first_name: 'Silly', last_name: 'Goose', role_id: 1, manager_id: null },
-  { id: 2, first_name: 'Quick', last_name: 'Quack', role_id: 2, manager_id: null },
-  { id: 3, first_name: 'Mallard', last_name: 'Zucklberg', role_id: 3, manager_id: null }
-];
+  const { title, salary, departmentId }: { title: string; salary: number; departmentId: number } = await inquirer.prompt([
+    {
+      name: 'title',
+      message: 'Enter the title of the role:',
+      type: 'input',
+    },
+    {
+      name: 'salary',
+      message: 'Enter the salary for the role:',
+      type: 'input', // Use 'input' for salary to allow decimal input
+    },
+    {
+      name: 'departmentId',
+      message: 'Select the department for this role:',
+      type: 'list',
+      choices: departmentChoices,
+    },
+  ]);
 
-// Connect to the database
-const startApp = async () => {
-  await connectDatabase();
-  
-  // Sample endpoint to get all employees
-  app.get('/employees', (_req, res) => {
-    res.json(employees.map(emp => ({
-      id: emp.id,
-      name: `${emp.first_name} ${emp.last_name}`,
-      role: roles.find(role => role.id === emp.role_id)?.title,
-      department: departments.find(dept => dept.id === roles.find(role => role.id === emp.role_id)?.department_id)?.name
-    })));
-  });
+  await pool.query('INSERT INTO role (title, salary, department_id) VALUES ($1, $2, $3)', [title, salary, departmentId]);
+  console.log(`Role ${title} added successfully.`);
+}
 
-  // Sample endpoint to get all departments
-  app.get('/departments', (_req, res) => {
-    res.json(departments);
-  });
+// Function to add an employee
+async function addEmployee() {
+  const roles = await pool.query('SELECT id, title FROM role');
+  const roleChoices = roles.rows.map(role => ({
+    name: role.title,
+    value: role.id,
+  }));
 
-  // Sample endpoint to get all roles
-  app.get('/roles', (_req, res) => {
-    res.json(roles);
-  });
+  // Prompt for employee details
+  const { firstName, lastName, roleId, managerId }: { firstName: string; lastName: string; roleId: number; managerId: number | null } = await inquirer.prompt([
+    {
+      name: 'firstName',
+      message: 'Enter the first name of the employee:',
+      type: 'input',
+    },
+    {
+      name: 'lastName',
+      message: 'Enter the last name of the employee:',
+      type: 'input',
+    },
+    {
+      name: 'roleId',
+      message: 'Select the role for this employee:',
+      type: 'list',
+      choices: roleChoices,
+    },
+    {
+      name: 'managerId',
+      message: 'Enter the ID of the employee\'s manager (leave blank if none):',
+      type: 'input',
+      default: null,
+    },
+  ]);
 
-  // Start the server
-  app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-  });
-};
+  await pool.query('INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)', [
+    firstName,
+    lastName,
+    roleId,
+    managerId ? Number(managerId) : null,
+  ]);
+  console.log(`Employee ${firstName} ${lastName} added successfully.`);
+}
+
+// Main function to run the application
+async function main() {
+  const { action }: { action: string } = await inquirer.prompt([
+    {
+      name: 'action',
+      message: 'What would you like to do?',
+      type: 'list',
+      choices: [
+        'Add Department',
+        'Add Role',
+        'Add Employee',
+        'Exit',
+      ],
+    },
+  ]);
+
+  switch (action) {
+    case 'Add Department':
+      await addDepartment();
+      break;
+    case 'Add Role':
+      await addRole();
+      break;
+    case 'Add Employee':
+      await addEmployee();
+      break;
+    case 'Exit':
+      console.log('Goodbye!');
+      await pool.end(); // Ensure the pool is closed before exiting
+      return;
+  }
+
+  // Run the main function again for the next action
+  await main();
+}
 
 // Start the application
-startApp().catch((error) => {
-  console.error('Error starting the application:', error);
-});
+main()
+  .catch(err => console.error('Error running the application:', err))
+  .finally(() => pool.end());
