@@ -6,10 +6,7 @@ import generateMarkdown from './generateMarkdown.js';
 
 const questions = [
     `{Q1}: What would you like todo ?`,
-
-    
 ];
-
 
 function init() {
     inquirer
@@ -32,8 +29,13 @@ function init() {
 
     ]).then((answers) => {
         const answers = generateMarkdown(answers)
+        fs.writeFile('schema.sql', answers, (err) => {
+            if (err) throw err;
+            console.log('The README.md file has been created!'.green);
+        });
 
 });
+
 }
 
 
