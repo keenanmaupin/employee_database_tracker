@@ -1,29 +1,31 @@
-import pool from './connection';
+// dbService.ts
 
-export const addDepartment = async (name: string) => {
-  const query = 'INSERT INTO department (name) VALUES ($1)';
-  await pool.query(query, [name]);
-  console.log(`Department ${name} added successfully.`);
-};
+import { pool } from './connection.js'; // Ensure the correct import with .js extension
 
-export const addRole = async (title: string, salary: number, departmentId: number) => {
-  const query = 'INSERT INTO role (title, salary, department_id) VALUES ($1, $2, $3)';
-  await pool.query(query, [title, salary, departmentId]);
-  console.log(`Role ${title} added successfully.`);
-};
-
-export const addEmployee = async (firstName: string, lastName: string, roleId: number, managerId: number | null) => {
-  const query = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)';
-  await pool.query(query, [firstName, lastName, roleId, managerId]);
-  console.log(`Employee ${firstName} ${lastName} added successfully.`);
-};
-
-export const getRoles = async () => {
-  const result = await pool.query('SELECT id, title FROM role');
+// Function to get all departments from the database
+export const getDepartments = async () => {
+  const result = await pool.query('SELECT * FROM department');
   return result.rows;
 };
 
-export const getDepartments = async () => {
-  const result = await pool.query('SELECT id, name FROM department');
+// Function to get all roles from the database
+export const getRoles = async () => {
+  const result = await pool.query('SELECT * FROM role');
+  return result.rows;
+};
+
+// Function to get all employees along with their department and role information
+export const getEmployees = async () => {
+  const result = await pool.query(`
+    SELECT department.name AS department_name, 
+           role.title AS role_title, 
+           role.salary, 
+           employee.first_name, 
+           employee.last_name, 
+           employee.manager_id 
+    FROM department
+    INNER JOIN role ON department.id = role.department_id
+    INNER JOIN employee ON role.id = employee.role_id
+  `);
   return result.rows;
 };

@@ -1,16 +1,9 @@
+// index.ts
+
 import inquirer from 'inquirer';
-import { Pool } from 'pg';
+import { pool } from './connection.js'; // Correctly importing pool
+import { getRoles } from './dbService.js'; // Adjusted to import getRoles correctly
 
-// Create a PostgreSQL connection pool
-const pool = new Pool({
-  user: 'your_username', // Replace with your actual database username
-  host: 'localhost',
-  database: 'companyX_db', // Make sure this database exists
-  password: 'your_password', // Replace with your actual database password
-  port: 5432,
-});
-
-// Define an interface for the expected response
 interface EmployeePromptAnswers {
   firstName: string;
   lastName: string;
@@ -18,16 +11,15 @@ interface EmployeePromptAnswers {
   managerId: number | null;
 }
 
-// Function to add an employee
+// Function to add a new employee to the database
 async function addEmployee() {
-  const roles = await pool.query('SELECT id, title FROM role');
-  const roleChoices = roles.rows.map((role) => ({
+  const roles = await getRoles(); // Fetch roles from the database
+  const roleChoices = roles.map((role: { id: number; title: string }) => ({
     name: role.title,
     value: role.id,
   }));
 
-  // Prompt for employee details
-  const answers: EmployeePromptAnswers = await inquirer.prompt<EmployeePromptAnswers>([
+  const answers: EmployeePromptAnswers = await inquirer.prompt([
     {
       name: 'firstName',
       message: 'Enter the first name of the employee:',
@@ -48,11 +40,10 @@ async function addEmployee() {
       name: 'managerId',
       message: "Enter the ID of the employee's manager (leave blank if none):",
       type: 'input',
-      default: null,
+      default: 'null', // Changed from 'null' to null
     },
-  ]);
+  ]) as EmployeePromptAnswers;
 
-  // Insert employee into the database
   await pool.query(
     'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)',
     [answers.firstName, answers.lastName, answers.roleId, answers.managerId ? Number(answers.managerId) : null]
@@ -73,25 +64,19 @@ async function main() {
   ]);
 
   switch (action) {
-    case 'Add Department':
-      // Call your addDepartment function
-      break;
-    case 'Add Role':
-      // Call your addRole function
-      break;
     case 'Add Employee':
       await addEmployee();
       break;
     case 'Exit':
       console.log('Goodbye!');
-      await pool.end();
+      await pool.end(); // Properly closing the database connection
       return;
   }
 
-  await main();
+  await main(); // Recursively call main for the next action
 }
 
-// Start the application
+// Run the main function and handle errors
 main()
   .catch((err) => console.error('Error running the application:', err))
-  .finally(() => pool.end());
+  .finally(() => pool.end()); // Ensure the pool is closed when finished
