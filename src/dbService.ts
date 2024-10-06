@@ -1,61 +1,71 @@
-import client from './database';
-import { Department, Role, Employee } from './types';
+import { pool } from './connection.js';
 
-class DbService {
-  // Fetch all departments
-  async getAllDepartments(): Promise<Department[]> {
-    const res = await client.query('SELECT * FROM department');
-    return res.rows;
-  }
+// Define the types for better type safety
+type Department = {
+    id: number;
+    name: string;
+};
 
-  // Add a new department
-  async addDepartment(name: string): Promise<Department> {
-    const res = await client.query(
-      'INSERT INTO department (name) VALUES ($1) RETURNING *',
-      [name]
-    );
-    return res.rows[0];
-  }
+type Role = {
+    id: number;
+    title: string;
+    salary: number;
+    department_id: number;
+};
 
-  // Fetch all roles
-  async getAllRoles(): Promise<Role[]> {
-    const res = await client.query('SELECT * FROM role');
-    return res.rows;
-  }
+type Employee = {
+    id: number;
+    first_name: string;
+    last_name: string;
+    role_id: number;
+    manager_id: number | null;
+};
 
-  // Add a new role
-  async addRole(title: string, salary: number, departmentId: number): Promise<Role> {
-    const res = await client.query(
-      'INSERT INTO role (title, salary, department_id) VALUES ($1, $2, $3) RETURNING *',
-      [title, salary, departmentId]
-    );
-    return res.rows[0];
-  }
+// Function to get all departments
+const getAllDepartments = async (): Promise<Department[]> => {
+    const result = await pool.query('SELECT * FROM department');
+    return result.rows;
+};
 
-  // Fetch all employees
-  async getAllEmployees(): Promise<Employee[]> {
-    const res = await client.query(`
-      SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, employee.manager_id
-      FROM employee
-      INNER JOIN role ON employee.role_id = role.id
-      INNER JOIN department ON role.department_id = department.id
-    `);
-    return res.rows;
-  }
+// Function to add a new department
+const addDepartment = async (name: string): Promise<void> => {
+    await pool.query('INSERT INTO department (name) VALUES ($1)', [name]);
+};
 
-  // Add a new employee
-  async addEmployee(
-    firstName: string,
-    lastName: string,
-    roleId: number,
-    managerId: number | null
-  ): Promise<Employee> {
-    const res = await client.query(
-      'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4) RETURNING *',
-      [firstName, lastName, roleId, managerId]
-    );
-    return res.rows[0];
-  }
-}
+// Function to get all roles
+const getAllRoles = async (): Promise<Role[]> => {
+    const result = await pool.query('SELECT * FROM role');
+    return result.rows;
+};
 
-export default new DbService();
+// Function to add a new role
+const addRole = async (title: string, salary: number, departmentId: number): Promise<void> => {
+    await pool.query('INSERT INTO role (title, salary, department_id) VALUES ($1, $2, $3)', [title, salary, departmentId]);
+};
+
+// Function to get all employees
+const getAllEmployees = async (): Promise<Employee[]> => {
+    const result = await pool.query('SELECT * FROM employee');
+    return result.rows;
+};
+
+// Function to add a new employee
+const addEmployee = async (firstName: string, lastName: string, roleId: number, managerId: number | null): Promise<void> => {
+    await pool.query('INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)', [firstName, lastName, roleId, managerId]);
+};
+
+// Function to update an employee's role
+const updateEmployeeRole = async (employeeId: number, newRoleId: number): Promise<void> => {
+    await pool.query('UPDATE employee SET role_id = $1 WHERE id = $2', [newRoleId, employeeId]);
+};
+
+// Exporting the functions for use in other modules
+export { 
+    getAllDepartments, 
+    addDepartment, 
+    getAllRoles, 
+    addRole, 
+    getAllEmployees, 
+    addEmployee, 
+    updateEmployeeRole 
+};

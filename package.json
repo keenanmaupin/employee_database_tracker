@@ -1,18 +1,26 @@
 {
-  "name": "employee_database_tracker",
+  "name": "main",
   "version": "1.0.0",
-  "description": ":TITLE:\r 👑Employee Database Tracker",
-  "main": "index.js",
+  "description": "",
+  "type": "module",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.17.1",
+    "inquirer": "^11.1.0",
+    "pg": "^8.13.0"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "colors": "^1.4.0",
-    "inquirer": "^11.1.0",
-    "node": "^20.18.0",
-    "pg": "^8.13.0"
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/pg": "^8.11.6",
+    "typescript": "^5.2.2"
   }
 }
