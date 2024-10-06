@@ -63,8 +63,15 @@ async function addEmployee() {
     value: role.id,
   }));
 
-  // Prompt for employee details
-  const { firstName, lastName, roleId, managerId }: { firstName: string; lastName: string; roleId: number; managerId: number | null } = await inquirer.prompt([
+  // Define an interface for the expected response
+  interface EmployeePromptAnswers {
+    firstName: string;
+    lastName: string;
+    roleId: number; // No need for null since it's a required selection
+    managerId: number | null; // This can be null if the user leaves it blank
+  }
+
+  const { firstName, lastName, roleId, managerId }: EmployeePromptAnswers = await inquirer.prompt([
     {
       name: 'firstName',
       message: 'Enter the first name of the employee:',
@@ -89,11 +96,14 @@ async function addEmployee() {
     },
   ]);
 
+  // Convert managerId to null if the user left it blank
+  const managerIdValue = managerId ? Number(managerId) : null;
+
   await pool.query('INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)', [
     firstName,
     lastName,
     roleId,
-    managerId ? Number(managerId) : null,
+    managerIdValue,
   ]);
   console.log(`Employee ${firstName} ${lastName} added successfully.`);
 }
