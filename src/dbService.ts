@@ -1,53 +1,29 @@
-import pool from './connection.js';
+import pool from './connection';
 
-// Function to add a department
-export const addDepartmentToDb = async (name: string) => {
-  try {
-    const result = await pool.query('INSERT INTO department (name) VALUES ($1) RETURNING *;', [name]);
-    return result.rows[0];
-  } catch (error) {
-    console.error('Error adding department:', error);
-    throw error;
-  }
+export const addDepartment = async (name: string) => {
+  const query = 'INSERT INTO department (name) VALUES ($1)';
+  await pool.query(query, [name]);
+  console.log(`Department ${name} added successfully.`);
 };
 
-// Function to add a role
-export const addRoleToDb = async (title: string, salary: number, departmentId: number) => {
-  try {
-    const result = await pool.query('INSERT INTO role (title, salary, department_id) VALUES ($1, $2, $3) RETURNING *;', [title, salary, departmentId]);
-    return result.rows[0];
-  } catch (error) {
-    console.error('Error adding role:', error);
-    throw error;
-  }
+export const addRole = async (title: string, salary: number, departmentId: number) => {
+  const query = 'INSERT INTO role (title, salary, department_id) VALUES ($1, $2, $3)';
+  await pool.query(query, [title, salary, departmentId]);
+  console.log(`Role ${title} added successfully.`);
 };
 
-// Function to add an employee
-export const addEmployeeToDb = async (firstName: string, lastName: string, roleId: number, managerId: number | null) => {
-  try {
-    const result = await pool.query('INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4) RETURNING *;', [firstName, lastName, roleId, managerId]);
-    return result.rows[0];
-  } catch (error) {
-    console.error('Error adding employee:', error);
-    throw error;
-  }
+export const addEmployee = async (firstName: string, lastName: string, roleId: number, managerId: number | null) => {
+  const query = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)';
+  await pool.query(query, [firstName, lastName, roleId, managerId]);
+  console.log(`Employee ${firstName} ${lastName} added successfully.`);
 };
 
-// Function to update an employee's role
-export const updateEmployeeRoleInDb = async (employeeId: number, newRoleId: number) => {
-  try {
-    const result = await pool.query('UPDATE employee SET role_id = $1 WHERE id = $2 RETURNING *;', [newRoleId, employeeId]);
-    return result.rows[0];
-  } catch (error) {
-    console.error('Error updating employee role:', error);
-    throw error;
-  }
+export const getRoles = async () => {
+  const result = await pool.query('SELECT id, title FROM role');
+  return result.rows;
 };
 
-// Export functions for use in index.ts
-export default {
-  addDepartmentToDb,
-  addRoleToDb,
-  addEmployeeToDb,
-  updateEmployeeRoleInDb,
+export const getDepartments = async () => {
+  const result = await pool.query('SELECT id, name FROM department');
+  return result.rows;
 };

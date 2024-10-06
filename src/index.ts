@@ -10,68 +10,24 @@ const pool = new Pool({
   port: 5432,
 });
 
-// Function to add a department
-async function addDepartment() {
-  const { name }: { name: string } = await inquirer.prompt([
-    {
-      name: 'name',
-      message: 'Enter the name of the department:',
-      type: 'input',
-    },
-  ]);
-
-  await pool.query('INSERT INTO department (name) VALUES ($1)', [name]);
-  console.log(`Department ${name} added successfully.`);
-}
-
-// Function to add a role
-async function addRole() {
-  const departments = await pool.query('SELECT id, name FROM department');
-  const departmentChoices = departments.rows.map(dept => ({
-    name: dept.name,
-    value: dept.id,
-  }));
-
-  const { title, salary, departmentId }: { title: string; salary: number; departmentId: number } = await inquirer.prompt([
-    {
-      name: 'title',
-      message: 'Enter the title of the role:',
-      type: 'input',
-    },
-    {
-      name: 'salary',
-      message: 'Enter the salary for the role:',
-      type: 'input', // Use 'input' for salary to allow decimal input
-    },
-    {
-      name: 'departmentId',
-      message: 'Select the department for this role:',
-      type: 'list',
-      choices: departmentChoices,
-    },
-  ]);
-
-  await pool.query('INSERT INTO role (title, salary, department_id) VALUES ($1, $2, $3)', [title, salary, departmentId]);
-  console.log(`Role ${title} added successfully.`);
+// Define an interface for the expected response
+interface EmployeePromptAnswers {
+  firstName: string;
+  lastName: string;
+  roleId: number;
+  managerId: number | null;
 }
 
 // Function to add an employee
 async function addEmployee() {
   const roles = await pool.query('SELECT id, title FROM role');
-  const roleChoices = roles.rows.map(role => ({
+  const roleChoices = roles.rows.map((role) => ({
     name: role.title,
     value: role.id,
   }));
 
-  // Define an interface for the expected response
-  interface EmployeePromptAnswers {
-    firstName: string;
-    lastName: string;
-    roleId: number; // No need for null since it's a required selection
-    managerId: number | null; // This can be null if the user leaves it blank
-  }
-
-  const { firstName, lastName, roleId, managerId }: EmployeePromptAnswers = await inquirer.prompt([
+  // Prompt for employee details
+  const answers: EmployeePromptAnswers = await inquirer.prompt<EmployeePromptAnswers>([
     {
       name: 'firstName',
       message: 'Enter the first name of the employee:',
@@ -90,22 +46,19 @@ async function addEmployee() {
     },
     {
       name: 'managerId',
-      message: 'Enter the ID of the employee\'s manager (leave blank if none):',
+      message: "Enter the ID of the employee's manager (leave blank if none):",
       type: 'input',
       default: null,
     },
   ]);
 
-  // Convert managerId to null if the user left it blank
-  const managerIdValue = managerId ? Number(managerId) : null;
+  // Insert employee into the database
+  await pool.query(
+    'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)',
+    [answers.firstName, answers.lastName, answers.roleId, answers.managerId ? Number(answers.managerId) : null]
+  );
 
-  await pool.query('INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)', [
-    firstName,
-    lastName,
-    roleId,
-    managerIdValue,
-  ]);
-  console.log(`Employee ${firstName} ${lastName} added successfully.`);
+  console.log(`Employee ${answers.firstName} ${answers.lastName} added successfully.`);
 }
 
 // Main function to run the application
@@ -115,36 +68,30 @@ async function main() {
       name: 'action',
       message: 'What would you like to do?',
       type: 'list',
-      choices: [
-        'Add Department',
-        'Add Role',
-        'Add Employee',
-        'Exit',
-      ],
+      choices: ['Add Department', 'Add Role', 'Add Employee', 'Exit'],
     },
   ]);
 
   switch (action) {
     case 'Add Department':
-      await addDepartment();
+      // Call your addDepartment function
       break;
     case 'Add Role':
-      await addRole();
+      // Call your addRole function
       break;
     case 'Add Employee':
       await addEmployee();
       break;
     case 'Exit':
       console.log('Goodbye!');
-      await pool.end(); // Ensure the pool is closed before exiting
+      await pool.end();
       return;
   }
 
-  // Run the main function again for the next action
   await main();
 }
 
 // Start the application
 main()
-  .catch(err => console.error('Error running the application:', err))
+  .catch((err) => console.error('Error running the application:', err))
   .finally(() => pool.end());
