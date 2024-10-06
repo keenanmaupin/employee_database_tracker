@@ -1,6 +1,5 @@
 import inquirer from 'inquirer';
 import fs from 'fs';
-import colors from 'colors';
 import generateMarkdown from './generateMarkdown.js';
 
 
@@ -31,7 +30,6 @@ function init() {
         const answers = generateMarkdown(answers)
         fs.writeFile('schema.sql', answers, (err) => {
             if (err) throw err;
-            console.log('The README.md file has been created!'.green);
         });
 
 });
