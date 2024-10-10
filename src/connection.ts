@@ -29,17 +29,4 @@ export { pool, connectToDb }; // Exporting pool and connectToDb
 
 
 
-// // Load environment variables from .env file
 
-
-// // Create a new pool instance with the connection parameters
-// const pool = new Pool({
-//   host: process.env.DB_HOST,
-//   user: process.env.DB_USER,
-//   password: process.env.DB_PASSWORD,
-//   database: process.env.DB_DATABASE,
-//   port: Number(process.env.DB_PORT), // Ensure port is a number
-// });
-
-// // Export the pool for use in other modules
-// export { pool };
