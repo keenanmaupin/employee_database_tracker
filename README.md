@@ -87,7 +87,7 @@ THEN I am prompted to select an employee to update and their new role and this i
 ## ADD SECTION 
 Github REPO URL: https://github.com/keenanmaupin/employee_database_tracker
 
-Walk Through vide URL: 
+Walk Through vide URL: https://app.screencastify.com/v2/manage/videos/ezlBZEH3DUscw99ETAGJ
 
 ## Questions
 - 🖍️[GitHub]🖍️: keenanmaupin
